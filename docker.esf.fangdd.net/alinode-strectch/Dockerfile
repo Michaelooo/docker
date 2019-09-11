@@ -1,0 +1,46 @@
+FROM docker.esf.fangdd.net/fdd-node:12
+
+RUN rm /bin/sh && ln -s /bin/bash /bin/sh
+
+# RUN addgroup -g 1000 node \
+#     && adduser -u 1000 -G node -s /bin/bash -D node 
+
+ENV ALINODE_VERSION 5.6.0
+ENV ARCH=x64
+ENV ENABLE_NODE_LOG YES
+ENV NODE_LOG_DIR /tmp
+ENV HOME /root
+
+RUN curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_VERSION/alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" \
+  && curl -fsSLO --compressed "https://npm.taobao.org/mirrors/alinode/v$ALINODE_VERSION/SHASUMS256.txt" \
+  && grep " alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz\$" SHASUMS256.txt | sha256sum -c - \
+  && tar -zxf "alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" -C /usr/local --strip-components=1 --no-same-owner \
+  && rm "alinode-v$ALINODE_VERSION-linux-$ARCH.tar.gz" SHASUMS256.txt \
+  && ls -la /usr/local/bin/ \
+  && ln -s /usr/local/bin/node /usr/local/bin/nodejs \
+  && ENABLE_NODE_LOG=NO npm install -g @alicloud/agenthub
+
+COPY ./default.config.js $HOME
+COPY ./start-agenthub.sh /
+RUN chmod u+x /start-agenthub.sh
+
+ENV YARN_VERSION 1.16.0
+
+RUN set -ex \
+  && for key in \
+    6A010C5166006599AA17F08146C2130DFD2497F5 \
+  ; do \
+    gpg --keyserver hkp://p80.pool.sks-keyservers.net:80 --recv-keys "$key" || \
+    gpg --keyserver hkp://ipv4.pool.sks-keyservers.net --recv-keys "$key" || \
+    gpg --keyserver hkp://pgp.mit.edu:80 --recv-keys "$key" ; \
+  done \
+  && curl -fsSLO --compressed "https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz" \
+  && curl -fsSLO --compressed "https://yarnpkg.com/downloads/$YARN_VERSION/yarn-v$YARN_VERSION.tar.gz.asc" \
+  && gpg --batch --verify yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz \
+  && mkdir -p /opt \
+  && tar -xzf yarn-v$YARN_VERSION.tar.gz -C /opt/ \
+  && ln -s /opt/yarn-v$YARN_VERSION/bin/yarn /usr/local/bin/yarn \
+  && ln -s /opt/yarn-v$YARN_VERSION/bin/yarnpkg /usr/local/bin/yarnpkg \
+  && rm yarn-v$YARN_VERSION.tar.gz.asc yarn-v$YARN_VERSION.tar.gz
+
+ENTRYPOINT ["/start-agenthub.sh"]
