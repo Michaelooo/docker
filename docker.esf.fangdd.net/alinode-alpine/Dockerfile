@@ -7,8 +7,10 @@ ENV ALINODE_VERSION=4.7.2 \
     NODE_LOG_DIR=/tmp \
     ALINODE_CONFIG=alinode.config.json \
     NODE_ENV=production \
-    HOME=/root \
+    HOME=/ \
     APP_DIR=/app
+  
+WORKDIR $HOME
 
 # 从官网镜像中复制 alinode 包含了 agenthub 无需安装 https://help.aliyun.com/document_detail/65376.html
 COPY --from=registry.cn-hangzhou.aliyuncs.com/aliyun-node/alinode:4.7.2-alpine /usr/local /usr/local
@@ -22,8 +24,8 @@ COPY --from=registry.cn-hangzhou.aliyuncs.com/aliyun-node/alinode:4.7.2-alpine /
 #   && rm -rf /tmp/*
 
 # # 初始化脚本
-COPY default.config.js /
-COPY start-agenthub.sh /
+COPY default.config.js $HOME
+COPY start-agenthub.sh $HOME
 
 RUN chown -R root:root start-agenthub.sh \
   && chmod +x start-agenthub.sh
