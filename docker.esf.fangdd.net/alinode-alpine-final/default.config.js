@@ -7,7 +7,13 @@ const defaults = {
   "heartbeatInterval": 60,
   "reconnectDelay": 10,
   "reportInterval": 60,
-  "error_log": []
+  "logdir": "/tmp/",
+  "error_log": [
+    `${process.env.HOME}/.logs/error.#YYYY#-#MM#-#DD#-#HH#.log`
+  ],
+  "packages": [
+    `${process.env.HOME}/package.json`
+  ]
 };
 
 var custom = {};
